@@ -1,0 +1,201 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Journal Article
+% LaTeX Template
+% Version 1.3 (9/9/13)
+%
+% This template has been downloaded from:
+% http://www.LaTeXTemplates.com
+%
+% Original author:
+% Frits Wenneker (http://www.howtotex.com)
+%
+% License:
+% CC BY-NC-SA 3.0 (http://creativecommons.org/licenses/by-nc-sa/3.0/)
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass[twoside]{article}
+
+\usepackage{lipsum} % Package to generate dummy text throughout this template
+
+\usepackage[sc]{mathpazo} % Use the Palatino font
+\usepackage[T1]{fontenc} % Use 8-bit encoding that has 256 glyphs
+\linespread{1.05} % Line spacing - Palatino needs more space between lines
+\usepackage{microtype} % Slightly tweak font spacing for aesthetics
+\usepackage{alltt}
+
+\usepackage[hmarginratio=1:1,top=32mm,columnsep=20pt]{geometry} % Document margins
+\usepackage{multicol} % Used for the two-column layout of the document
+\usepackage[hang, small,labelfont=bf,up,textfont=it,up]{caption} % Custom captions under/above floats in tables or figures
+\usepackage{booktabs} % Horizontal rules in tables
+\usepackage{float} % Required for tables and figures in the multi-column environment - they need to be placed in specific locations with the [H] (e.g. \begin{table}[H])
+\usepackage{hyperref} % For hyperlinks in the PDF
+
+\usepackage{lettrine} % The lettrine is the first enlarged letter at the beginning of the text
+\usepackage{paralist} % Used for the compactitem environment which makes bullet points with less space between them
+
+\usepackage{abstract} % Allows abstract customization
+\renewcommand{\abstractnamefont}{\normalfont\bfseries} % Set the "Abstract" text to bold
+\renewcommand{\abstracttextfont}{\normalfont\small\itshape} % Set the abstract itself to small italic text
+
+\usepackage{titlesec} % Allows customization of titles
+\renewcommand\thesection{\Roman{section}} % Roman numerals for the sections
+\renewcommand\thesubsection{\Roman{subsection}} % Roman numerals for subsections
+\titleformat{\section}[block]{\large\scshape\centering}{\thesection.}{1em}{} % Change the look of the section titles
+\titleformat{\subsection}[block]{\large}{\thesubsection.}{1em}{} % Change the look of the section titles
+
+\usepackage{fancyhdr} % Headers and footers
+\pagestyle{fancy} % All pages have headers and footers
+\fancyhead{} % Blank out the default header
+\fancyfoot{} % Blank out the default footer
+\fancyhead[C]{Getting started with OpenRISC on the SocKit} % Custom header text
+\fancyfoot[RO,LE]{\thepage} % Custom footer text
+
+%----------------------------------------------------------------------------------------
+%	TITLE SECTION
+%----------------------------------------------------------------------------------------
+
+\title{\vspace{-15mm}\fontsize{24pt}{10pt}\selectfont\textbf{Getting
+    started with OpenRISC on the SocKit}} % Article title
+
+\author{
+\large
+\textsc{Hans Baier}\thanks{Thanks to Stephan Kristiansson for his
+  generous help and Kevin Mehall for his excellent tutorial on the de0\_nano}\\[2mm] 
+\normalsize \href{mailto:hansfbaier@gmail.com}{hansfbaier@gmail.com} % Your email address
+\vspace{-5mm}
+}
+\date{}
+
+%----------------------------------------------------------------------------------------
+
+\begin{document}
+
+\maketitle % Insert title
+
+\thispagestyle{fancy} % All pages have headers and footers
+
+%----------------------------------------------------------------------------------------
+%	ABSTRACT
+%----------------------------------------------------------------------------------------
+
+\begin{abstract}
+
+\noindent Getting started with OpenRISC can be quite daunting for
+beginners. There is so much to learn. Fortunately the community is
+very helpful. In order to diminish duplication of effort, this
+tutorial was conceived out of the generous hours of support that
+Stefan provided over IRC. This tutorial also provides some of the
+supplemental files, for convenience.
+
+\end{abstract}
+
+%----------------------------------------------------------------------------------------
+%	ARTICLE CONTENTS
+%----------------------------------------------------------------------------------------
+
+%\begin{multicols}{2} % Two-column layout throughout the main article text
+
+\section{Introduction}
+
+\lettrine[nindent=0em,lines=3]{O} penRISC is an amazing learning
+plattform: You can run Open Source Software on Open Source Hardware
+and see down to the metal, how hardware is designed, drivers are
+written, and how software and hardware interact.  
+
+%------------------------------------------------
+
+\section{Prerequisites}
+This tutorial assumes you are using a GNU/Linux Distribution. This
+tutorial is based on Ubuntu 12.04 (precise).
+
+\begin{compactitem}
+\item Experience with Linux systems
+\item Compiling software from source
+\item Basic understanding of digital logic, communication protocols
+  and electronics.
+\item Familiarity with Verilog and C
+\end{compactitem}
+
+You will need a Linux workstation with a 64 Bit operating system, 8GB
+of RAM and about 20-30GB free hard drive space. You will also need
+terasic's
+\href{http://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English\&No=816}{SocKit
+  Development Board}.
+
+%------------------------------------------------
+
+\section{Step By Step}
+\begin{enumerate}
+\item Install \href{http://dl.altera.com/?edition=web}{Altera Quartus
+    II Web Edition} at least version 13.1. For this tutorial we assume
+  you installed it in \texttt{/opt/altera/}
+
+\item Download the
+  \href{http://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English\&CategoryNo=165\&No=816\&PartNo=4}{resources}
+  for the development board. Find out what board revision you have
+  (first PDF on the resources page), and download the SocKit System CD
+  for the correct board revision. This will be most likely be Revision
+  C at the time of this writing:
+  \begin{alltt}
+\$ wget -c http://www.terasic.com/downloads/cd-rom/sockit/SoCKit\_V.1.0.0\_System.zip
+  \end{alltt}
+
+\item Install development tools:
+  \begin{alltt}
+\$ sudo apt-get install build-essential libmpc-dev libgmp3-dev libmpfr-dev  \textbackslash
+                       lzop libsdl1.2-dev xterm automake libtool git-core git
+  \end{alltt}
+
+\item Create the directory where we put openrisc related files:
+  \begin{alltt}
+\$ mkdir ~/openrisc
+  \end{alltt}
+
+\item Create a file with necessary environment variables:
+  \begin{alltt}
+\$ cd ~/openrisc
+\$ editor altera_env.sh
+\hrulefill
+export ALTERA_PATH=/opt/altera
+export PATH=$PATH:$ALTERA_PATH/quartus/bin
+\hrulefill
+\$ source altera_env.sh
+  \end{alltt}
+  You may want to source this file every time you want to use Altera's
+  tools.
+
+\item Get \texttt{orpsoc} which is the OpenRISC-SoC-Builder and
+  \texttt{orpsoc-cores}, which contains the IP-cores and board
+  configurations:
+  \begin{alltt}
+\$ git clone https://github.com/openrisc/orpsoc.git
+\$ git clone https://github.com/openrisc/orpsoc-cores.git
+  \end{alltt}
+
+\end{enumerate}
+
+
+%----------------------------------------------------------------------------------------
+%	REFERENCE LIST
+%----------------------------------------------------------------------------------------
+
+\begin{thebibliography}{99} % Bibliography - this is intentionally simple in this template
+
+\bibitem[Figueredo and Wolf, 2009]{Figueredo:2009dg}
+Figueredo, A.~J. and Wolf, P. S.~A. (2009).
+\newblock Assortative pairing and life history strategy - a cross-cultural
+  study.
+\newblock {\em Human Nature}, 20:317--330.
+ 
+\end{thebibliography}
+
+%----------------------------------------------------------------------------------------
+
+%\end{multicols}
+
+\end{document}

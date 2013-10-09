@@ -114,7 +114,8 @@ written, and how software and hardware interact.
 
 \section{Prerequisites}
 This tutorial assumes you are using a GNU/Linux Distribution. This
-tutorial is based on Ubuntu 12.04 (precise).
+tutorial is based on Ubuntu 12.04 (precise). To make proper use of
+this tutorial, you probably need:
 
 \begin{compactitem}
 \item Experience with Linux systems
@@ -411,7 +412,7 @@ on it.
 \item We will replace the Yocto Linux system with a Debian system
   (optional, but needed for convenient software install):
   \begin{alltt}
-\$ wget -c
+\$ wget -c \textbackslash
 http://www.rocketboards.org/pub/Projects/Debian/debian.img.gz
 \$ gunzip debian.img.gz
 \$ sudo dd if=debian.img of=/dev/sd\emph{X}2 bs=512
@@ -426,7 +427,11 @@ https://releases.linaro.org/13.04/ubuntu/quantal-images/developer/linaro-quantal
 \end{scriptsize}
 but this image is unsupported (by me) since I did not try it.
 
-\item Next thing is to build the Linux kernel for the ARM based HPS system:
+\item Next thing is to build the Linux kernel for the ARM based HPS
+  system. This is actually not necessary, if you don't need USB OTG
+  working (kernel versino 3.7). But if you plan to use USB peripherals
+  with the ARM HPS, you need the Kernel version 3.9.
+
   \begin{alltt}
 \$ cd ~/openrisc
 \$ mkdir sockit
@@ -434,9 +439,43 @@ but this image is unsupported (by me) since I did not try it.
 \$ cd sockit
 \$ git clone --depth 1 git://git.rocketboards.org/linux-socfpga.git 
 \$ cd linux-socfpga
-\$ 
+\$ git checkout -b rel_13.07_RC5
+\$ make ARCH=arm socfpga_defconfig
+\$ sed -i 's/CONFIG_CROSS_COMPILE.*\$/CONFIG_CROSS_COMPILE="arm-none-eabi-"/g' .config
+\$ make ARCH=arm
+\$ make ARCH=arm LOADADDR=0x00008000 uImage
   \end{alltt}
+
+\item Now that we have the uImage we need to copy it (and the binary
+  form of the device tree) on the the FAT partition of the sdcard:
+  \begin{alltt}
+\$ sudo mount /dev/sd{X}1 /mnt -t vfat
+\$ sudo cp ./arch/arm/boot/uImage /mnt/uImage
+\$ sudo cp ./arch/arm/boot/dts/socfpga_cyclone5.dtb /mnt/socfpga.dtb
+\$ sudo umount /mnt
+  \end{alltt}
+
+\item Finally we install the preloader and build/install uboot:
+  \begin{alltt}
+\$ cd ~/openrisc/orpsoc-cores/build/sockit/bld-quartus/software/spl_bsp/uboot-socfpga/
+\$ export CROSS_COMPILE=arm-none-eabi-
+\$ make
+\$ mkpimage -o spl/u-boot-spl.img spl/u-boot-spl.bin spl/u-boot-spl.bin \textbackslash
+               spl/u-boot-spl.bin spl/u-boot-spl.bin
+\$ sudo dd if=spl/u-boot-spl.img of=/dev/sd\emph{X}3 bs=64k seek=0
+\$ sudo dd if=u-boot.img of=/dev/sd\emph{x}3 bs=64k seek=4
+\$ sudo sync
+\$ sudo eject /dev/sd\emph{X}    
+  \end{alltt}
+
+\item Ready to boot! Insert the sdcard, power on and start terminal
+    \begin{alltt}
+\$ picocom /dev/ttyUSB0 -b 57600
+    \end{alltt}
+
 \end{enumerate}
+
+
 
 %----------------------------------------------------------------------------------------
 %	REFERENCE LIST
@@ -447,6 +486,12 @@ but this image is unsupported (by me) since I did not try it.
 \bibitem[rocketboards]{rocketboards:2013} \url{www.rocketboards.org}
   Resource website for SoCKit and related boards. Lots of useful
   information and software.
+
+\bibitem[rocketboards-start]{rocketboards-start:2013}
+    \href{http://www.rocketboards.org/foswiki/Documentation/AlteraSoCDevelopmentBoardYoctoGettingStarted}{Linux
+      Getting Started on Altera SoC Development Board - Using Yocto
+      Source Package}
+    Describes how to create SD images and build uboot
 
 \end{thebibliography}
 

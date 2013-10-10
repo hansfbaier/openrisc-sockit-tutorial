@@ -133,7 +133,7 @@ terasic's
 
 %------------------------------------------------
 
-\section{Step By Step}
+\section{Setting up the Environment}
 \begin{enumerate}
 \item Install \href{http://dl.altera.com/?edition=web}{Altera Quartus
     II Web Edition} at least version 13.0sp1. For this tutorial we assume
@@ -153,7 +153,8 @@ terasic's
   \begin{alltt}
 \$ sudo apt-get install build-essential libmpc-dev libgmp3-dev libmpfr-dev  \textbackslash
                        lzop libsdl1.2-dev xterm automake libtool \textbackslash
-                       git-core git subversion iverilog device-tree-compiler
+                       git-core git subversion iverilog device-tree-compiler \textbackslash
+                       picocom
   \end{alltt}
 
 \item Create the directory where we put openrisc related files:
@@ -179,86 +180,6 @@ export PATH=$PATH:$ALTERA_PATH/quartus/bin
 \$ mkdir CD
 \$ unzip ../SoCKit\_V.1.0.0\_System.zip -d CD
   \end{alltt}
-
-\item Get \texttt{orpsoc} which is the OpenRISC-SoC-Builder and
-  \texttt{orpsoc-cores}, which contains the IP-cores and board
-  configurations:
-  \begin{alltt}
-\$ git clone https://github.com/openrisc/orpsoc.git
-\$ git clone https://github.com/skristiansson/orpsoc-cores.git
-  \end{alltt}
-
-\item Build and install OrpSoC:
-  \begin{alltt}
-\$ cd orpsoc
-\$ autoreconf -i && ./configure && make && sudo make install
-  \end{alltt}
-
-\item Configure orpsoc-cores and test:
-  \begin{alltt}
-\$ cd ../orpsoc-cores/
-\$ editor orpsoc.conf
-\hrulefill
-[main]
-cores_root   = ./cores
-systems_root = ./systems
-\hrulefill
-\$ orpsoc sim wb_bfm
-Preparing wb_bfm
-Preparing vlog_tb_utils
-All tests passed!
-  \end{alltt}
-
-\item We need to start a first run on building the sockit. It will
-  fail, because the Qsys infrastructure Verilog files don't exist yet.
-  We need this run, though, since the target directory for the Qsys
-  files does not exist yet:
-  \begin{alltt}
-\$ orpsoc build sockit    
-  \end{alltt}
-
-\item We now need to generate the infrastructure Verilog files for the
-  HPS system. Fire up Quartus:
-  \begin{alltt}
-\$ quartus &
-  \end{alltt}
-
-\item Close the splash screen and start Qsys with: Tools\M Qsys
-
-\item Open Qsys file with: File\M Open
-
-\item Choose File: \texttt{systems/sockit/data/sockit.qsys}
-
-\item Klick on the 'Generation' Tab and choose for Output Directory
-  (relative to orpsoc-cores): \texttt{build/sockit/src/qsys/}
-
-  This takes a while. Get a glass of orange juice (healthier than
-  coffee) or do a couple of pushups in the meantime.
-
-\item When Generation is finished successfully, close the dialog, save
-  the Qsys (then the output path will be right when you choose to
-  alter the Qsys and need to rerun again).
-
-\item Close Qsys and Quartus and
-  build the FPGA bitstream:
-  \begin{alltt}
-\$ orpsoc build sockit    
-  \end{alltt}
-
-  Once more, this takes quite a while, depending on your machine. Time
-  for another glass of orange juice and some pushups.
-
-  If all went well, then you should have the file
-  \texttt{build/sockit/bld-quartus/sockit.sof}. This is the bitstream
-  for the FPGA:
-  \begin{alltt}
-\$ find . | grep sof\$
-./build/sockit/bld-quartus/sockit.sof    
-  \end{alltt}
-
-\item If you are done with the pushups, and it is still compiling, you
-  can continue with the following steps until you need the Bitstream
-  (\texttt{.sof}).
 
 \item Download the
   \href{http://dl.altera.com/?edition=web#tabs-2}{Altera Embedded
@@ -309,7 +230,95 @@ SUBSYSTEM=="usb", ATTRS{idVendor}=="09fb", ATTRS{idProduct}=="6810", MODE="0666"
   since the product id mutated since first plug in. If in doubt, check
   your Blaster with \texttt{lsusb} and alter \texttt{idProduct}
   accordingly.
+\end{enumerate}
 
+
+\section{Building the Bitstream for the FPGA}
+\begin{enumerate}
+\item Get \texttt{orpsoc} which is the OpenRISC-SoC-Builder and
+  \texttt{orpsoc-cores}, which contains the IP-cores and board
+  configurations:
+  \begin{alltt}
+\$ git clone https://github.com/openrisc/orpsoc.git
+\$ git clone https://github.com/skristiansson/orpsoc-cores.git
+  \end{alltt}
+
+\item Build and install OrpSoC:
+  \begin{alltt}
+\$ cd orpsoc
+\$ autoreconf -i && ./configure && make && sudo make install
+  \end{alltt}
+
+\item Configure orpsoc-cores and test:
+  \begin{alltt}
+\$ cd ../orpsoc-cores/
+\$ editor orpsoc.conf
+\hrulefill
+[main]
+cores_root   = ./cores
+systems_root = ./systems
+\hrulefill
+\$ orpsoc sim wb_bfm
+Preparing wb_bfm
+Preparing vlog_tb_utils
+All tests passed!
+  \end{alltt}
+
+\item We need to start a first run on building the sockit. It will
+  fail, because the Qsys infrastructure Verilog files don't exist yet.
+  We need this run, though, since the target directory for the Qsys
+  files does not exist yet:
+  \begin{alltt}
+\$ orpsoc build sockit    
+  \end{alltt}
+
+\item We now need to generate the infrastructure Verilog files for the
+  HPS\footnote{HPS = Hard Processor System as opposed to softcores on
+    the FPGA} system. Fire up Quartus:
+  \begin{alltt}
+\$ quartus &
+  \end{alltt}
+
+\item Close the splash screen and start Qsys with: Tools\M Qsys
+
+\item Open Qsys file with: File\M Open
+
+\item Choose File: \texttt{systems/sockit/data/sockit.qsys}
+
+\item Klick on the 'Generation' Tab and choose for Output Directory
+  (relative to orpsoc-cores): \texttt{build/sockit/src/qsys/}
+
+  This takes a while. Get a glass of orange juice (healthier than
+  coffee) or do a couple of pushups in the meantime.
+
+\item When Generation is finished successfully, close the dialog, save
+  the Qsys (then the output path will be right when you choose to
+  alter the Qsys and need to rerun again).
+
+\item Close Qsys and Quartus and
+  build the FPGA bitstream:
+  \begin{alltt}
+\$ orpsoc build sockit    
+  \end{alltt}
+
+  Once more, this takes quite a while, depending on your machine. Time
+  for another glass of orange juice and some pushups.
+
+  If all went well, then you should have the file
+  \texttt{build/sockit/bld-quartus/sockit.sof}. This is the bitstream
+  for the FPGA:
+  \begin{alltt}
+\$ find . | grep sof\$
+./build/sockit/bld-quartus/sockit.sof    
+  \end{alltt}
+
+\item If you are done with the pushups, and it is still compiling, you
+  can continue with the following steps until you need the Bitstream
+  (\texttt{.sof}).
+\end{enumerate}
+
+\section{Building the Software for the ARM HPS}
+\begin{enumerate}
 \item Start the Altera embedded command shell:
   \begin{alltt}
 \$ /opt/altera/embedded/embedded_command_shell.sh
@@ -390,9 +399,8 @@ on it.
   \item connect the USB serial cable to your Host PC 
   \item Insert the SD card into the SoCKit
   \item Power the board on
-  \item Fire up a terminal
-    program of your choice on the virtual USB terminal (we assume
-    \texttt{/dev/ttyUSB0}):
+  \item Fire up the terminal program on the virtual USB terminal (we
+    assume \texttt{/dev/ttyUSB0}):
     \begin{alltt}
 \$ picocom /dev/ttyUSB0 -b 57600
     \end{alltt}
@@ -468,14 +476,56 @@ but this image is unsupported (by me) since I did not try it.
 \$ sudo eject /dev/sd\emph{X}    
   \end{alltt}
 
-\item Ready to boot! Insert the sdcard, power on and start terminal
-    \begin{alltt}
-\$ picocom /dev/ttyUSB0 -b 57600
-    \end{alltt}
+\item Before we can run this image, we have to load the Bistream onto
+  the FPGA. Therefore we power up the board (without the SD card
+  inserted) and run the following commands:
+  \begin{alltt}
+\$ cd ~/openrisc/orpsoc-cores/ 
+\$ orpsoc pgm sockit
+  \end{alltt}
+  After those commands, a blue LED (D8) should light up on the board,
+  indicating the bistream has been downloaded to the FPGA
 
+\item Ready to boot! Insert the sdcard and start terminal software:
+\begin{alltt}
+\$ picocom /dev/ttyUSB0 -b 57600
+\end{alltt}
+
+\item Then press the WARM\_RST button on the board. This resets the HPS
+  system and should boot uboot then Linux. If you made it to the login
+  prompt, congratulations!
+
+\item For the proceedings below, make shure your network card is
+  plugged in network configuration has been set up properly.
 \end{enumerate}
 
+\section{Running Linux on OpenRISC}
+\begin{enumerate}
+\item Now we have our base station in place on the ARM HPS, we will
+  advance to get Linux with OpenRISC running. To do this we need to
+  transfer several files over to the HPS, the Linux
+  Kernel for OpenRISC and tools to start it:
+  \begin{alltt}
+\$ wget -c http://oompa.chokladfabriken.org/openrisc/vmlinux-x.bin   
+\$ scp vmlinux-x.bin root@\emph{hps.ip.address.local}:/root/
+\$ git clone git@github.com:hansfbaier/openrisc-sockit-tutorial.git
+\$ pushd openrisc-sockit-tutorial/
+\$ scp -r sockit-tools/ root@\emph{hps.ip.address.local}:/root/
+\$ popd
+  \end{alltt}
 
+\item Then, on the serial console to the HPS, do the following:
+  \begin{alltt}
+# cd /root
+# apt-get install python-serial
+# ./sockit-tools/loadbin.sh vmlinux-x.bin
+# miniterm.py /dev/ttyS1 115200
+  \end{alltt}
+
+\item If you see Linux booting and running, congratulations! You made
+  it! You also should see a smiling penguin and some kernel boot
+  message appearing on the VGA output after some time.
+\end{enumerate}
 
 %----------------------------------------------------------------------------------------
 %	REFERENCE LIST
